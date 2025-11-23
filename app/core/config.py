@@ -1,7 +1,10 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+
 class Settings:
-    BASE_URL: str = "http://localhost:8000"
-    # e.g., MAX_URL_REQUESTS = 10
-    #       SECRET_KEY = "random_secret_key"
+    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000")
     MAX_REQUEST_SIZE: int = 10
 
 settings = Settings()
