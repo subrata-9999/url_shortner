@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white min-h-screen flex flex-col">
+
+    <!-- IMPORTANT: device.js must be here -->
+    <script src="/static/js/device.js"></script>
+
+    <!-- 🌙 Navbar -->
+    <nav
+        class="w-full flex items-center justify-between px-6 py-4 bg-gray-900/70 backdrop-blur-md border-b border-gray-800 shadow-lg">
+        <a href="/" class="text-2xl font-bold text-yellow-400 hover:text-yellow-300 transition duration-200">
+            🔗 URL Shortener
+        </a>
+
+        <div class="space-x-6">
+            {% if username %}
+            <span class="text-gray-300 font-medium">
+                👋 Welcome, <span class="text-yellow-400 font-semibold">{{ username }}</span>
+            </span>
+            <a href="/logout"
+                class="px-4 py-2 bg-red-500 hover:bg-red-400 text-white rounded-lg font-semibold transition duration-200">
+                Logout
+            </a>
+            {% else %}
+            <a href="/login" class="text-gray-300 hover:text-yellow-400 transition duration-200 font-medium">Login</a>
+            <a href="/register"
+                class="px-4 py-2 bg-yellow-400 text-black rounded-lg font-semibold hover:bg-yellow-300 transition duration-200">
+                Register
+            </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- 🌐 Main Section -->
+    <div class="flex-1 flex flex-col items-center justify-center px-4">
+        <div
+            class="w-full max-w-md bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-gray-700 mt-10">
+            <h1 class="text-3xl font-bold text-center mb-6 text-yellow-400 tracking-wide">
+                Shorten Your Links ✨
+            </h1>
+
+            <form id="shortenForm" class="flex flex-col space-y-4">
+                <input type="url" id="original_url" name="original_url" placeholder="Enter your long URL..."
+                    class="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder-gray-400 text-gray-100"
+                    required>
+
+                <button type="submit"
+                    class="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold py-3 rounded-lg transition duration-200 ease-in-out shadow-md hover:shadow-lg">
+                    Generate Short URL
+                </button>
+            </form>
+
+            <!-- Daily Usage Info -->
+            <div class="mt-6 text-center text-gray-300 bg-gray-800/60 p-4 rounded-xl border border-gray-700">
+                <p class="text-lg font-semibold">
+                    🔥 Daily Usage:
+                    <span class="text-yellow-400 request_done">{{ today_request_count }}</span> /
+                    <span class="text-yellow-400 request_max">{{ max_request_per_day }}</span>
+                </p>
+
+                <p class="text-sm mt-1">
+                    🕒 Remaining:
+                    <span class="text-green-400 font-semibold request_left">{{ pending_request_count }}</span>
+                </p>
+            </div>
+
+            <div id="resultBox" class="mt-6 bg-gray-800/80 p-5 rounded-xl border border-gray-700 text-gray-200 break-words break-all
+           {% if pending_request_count != 0 %}hidden{% endif %}">
+
+                {% if pending_request_count == 0 %}
+                <p class="text-red-400 text-center font-medium">
+                    You have reached your daily limit. Please try again tomorrow.
+                </p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="mt-8 mb-4 text-gray-500 text-sm text-center">
+        Built with ❤️ using <span class="text-yellow-400 font-semibold">FastAPI</span>
+    </footer>
+
+    <script>
+        document.getElementById("shortenForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const url = document.getElementById("original_url").value;
+
+            let formData = new FormData();
+            formData.append("original_url", url);
+
+            const response = await fetch("/shorten", {
+                method: "POST",
+                headers: {
+                    "X-Device-ID": getDeviceId()
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            const box = document.getElementById("resultBox");
+            box.classList.remove("hidden");
+
+            if (data.status === "success") {
+                // Update the daily usage box (LIVE)
+                document.querySelector(".request_done").innerText = data.today_request_count;
+                document.querySelector(".request_left").innerText = data.pending_request_count;
+                document.querySelector(".request_max").innerText = data.max_request_per_day;
+
+                // Show result box
+                box.innerHTML = `
+                    <p><strong class="text-yellow-400">Original URL:</strong> 
+                        <a href="${data.original_url}" target="_blank"
+                        class="underline hover:text-yellow-300 break-words break-all whitespace-normal">
+                        ${data.original_url}
+                        </a>
+                    </p>
+
+                    <p><strong class="text-yellow-400">Short URL:</strong> 
+                        <a href="${data.short_url}" target="_blank"
+                        class="font-medium text-yellow-300 hover:text-yellow-200 break-words break-all whitespace-normal">
+                        ${data.short_url}
+                        </a>
+                    </p>
+                `;
+
+            } else {
+                box.innerHTML = `
+                    <p class="text-red-400 text-center">${data.message}</p>
+                `;
+            }
+        });
+    </script>
+
+</body>
+
+</html>
