@@ -71,7 +71,7 @@ engine = create_engine(
     pool_pre_ping=True,
     poolclass=NullPool,
     connect_args={
-        "ssl": {g
+        "ssl": {
             "ca": "/var/task/app/core/ca.pem"
         }
     },
