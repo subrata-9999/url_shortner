@@ -130,8 +130,12 @@ async def register_user(
         )
 
         db.add(new_user)
+        db.flush()          # ✅ id yahin generate ho jayegi
+
+        print("New User ID:", new_user.id)
+
         db.commit()
-        db.refresh(new_user)
+
 
         # 📧 send email
         from app.core.mail_config import mail_conf

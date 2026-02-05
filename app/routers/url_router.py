@@ -13,6 +13,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import or_
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
+from sqlalchemy.exc import SQLAlchemyError
+import traceback
+
+
 
 # take max request size from config
 max_request_per_day = settings.MAX_REQUEST_SIZE
@@ -125,9 +129,29 @@ def shorten_url(
             short_url=short_code,
             status=StatusEnum.ACTIVE
         )
-        db.add(new_url)
-        db.commit()
-        db.refresh(new_url)
+        # db.add(new_url)
+        # db.commit()
+        # db.refresh(new_url)
+
+        try:
+            db.add(new_url)
+            db.commit()
+            db.refresh(new_url)
+
+        except SQLAlchemyError as e:
+            db.rollback()
+
+            print("🔥 DATABASE ERROR:", e)
+            traceback.print_exc()
+
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "status": "error",
+                    "message": str(e)
+                }
+            )
+
 
         short_url = f"{settings.BASE_URL}/{short_code}"
         trans_id = new_url.id
